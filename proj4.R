@@ -29,9 +29,9 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
 
   # maxit = 0
   maxit=0
-  
+
   # while grad not absolute value less than tol times 
-  while(sum(abs(grad_vec)>tol)!=0 & maxit <= 100){ # the absolute value of the objective function plus fscale 
+  while(abs(grad(theta)<tol*abs(func(theta)+fscale)) & maxit <= 100){ # the absolute value of the objective function plus fscale 
     # maxit = maxit + 1
     maxit=maxit+1
     # if hess not provided, find hess
@@ -43,6 +43,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     # if not 
     if(class(flag)[1]=='try-error'){
       # keep adding identity matrix until chol can be computed (use try)
+      
     }
     
     # inverse of hess use chol and backsolve
@@ -78,6 +79,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     theta = newtheta
     grad_vec = grad(theta)
   }
+
   # if maxit > 100 stop()
   if(maxit>100)
     stop("fail")
@@ -86,7 +88,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   if(class(try (chol(hess_mat)))[1]=='try-error')
     warning("hess matrix not posdef")
   
-  inverse_hess = solve(hess_mat)
+
   inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
   print(inverse_hess)
   print(theta)
