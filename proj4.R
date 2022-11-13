@@ -31,23 +31,24 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   maxit=0
 
   # while grad not absolute value less than tol times 
-  while(abs(grad(theta)<tol*abs(func(theta)+fscale)) & maxit <= 100){ # the absolute value of the objective function plus fscale 
+  while(sum(abs(grad_vec) > tol*abs(func(theta,...)+fscale))!=0 & maxit <= 100){ # the absolute value of the objective function plus fscale 
     # maxit = maxit + 1
     maxit=maxit+1
     # if hess not provided, find hess
     if(is.null(hess)==TRUE) hess_mat = Hfd(theta = theta, grad = grad, eps = eps, ...)
-    else hess_mat = hess(theta)
+    else hess_mat = hess(theta,...)
     # check if hess if positive definite using chol
     flag=try (chol(hess_mat))
 
     # if not 
     if(class(flag)[1]=='try-error'){
       # keep adding identity matrix until chol can be computed (use try)
-      
+      d = -min(eigen(hess_mat)$values) +1
+      hess_mat = hess_mat + diag(d, nrow(hess_mat))
     }
     
-    # inverse of hess use chol and backsolve
-   # inverse_hess = solve(hess_mat)
+    
+
     
     # delta = -(hess(theta))^(-1)*grad(theta)
     delta = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),-grad_vec))
@@ -56,13 +57,13 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     newtheta=theta+delta
     
     # new = func(newtheta)
-    new = func(newtheta)
+    new = func(newtheta,...)
     
     # max.half = 0
     max.half=0
     
     # while new > original and max.half <= 20
-    while(new > original& max.half<=20){
+    while(new > original && max.half<=20){
       # max.half = max.half + 1
       max.half=max.half+1
       
@@ -70,14 +71,14 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       newtheta= theta+ delta/2
       # new = func(newtheta)
       
-      new = func(newtheta)
+      new = func(newtheta,...)
     }
     # if max.half > 20 stop("step fails to reduce the objective despite trying max.half step halvings")
     if(max.half > 20)
       stop("step fails to reduce the objective despite trying max.half step halvings")
     # grad(newtheta)
     theta = newtheta
-    grad_vec = grad(theta)
+    grad_vec = grad(theta,...)
   }
 
   # if maxit > 100 stop()
@@ -87,12 +88,12 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   # if hess(theta) not posdef warning("hess matrix not posdef")
   if(class(try (chol(hess_mat)))[1]=='try-error')
     warning("hess matrix not posdef")
-  
+
 
   inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
-  print(inverse_hess)
-  print(theta)
-  print(maxit)
+  output = list(func(theta), theta, maxit, grad_vec, inverse_hess)
+  names(output) = c("f", "theta", "iter", "g", "Hi")
+  return(output)
 }
 
 
