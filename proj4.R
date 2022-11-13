@@ -46,7 +46,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     }
     
     # inverse of hess use chol and backsolve
-    inverse_hess = solve(hess_mat)
+   # inverse_hess = solve(hess_mat)
     
     # delta = -(hess(theta))^(-1)*grad(theta)
     delta = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),-grad_vec))
@@ -85,6 +85,10 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   # if hess(theta) not posdef warning("hess matrix not posdef")
   if(class(try (chol(hess_mat)))[1]=='try-error')
     warning("hess matrix not posdef")
+  
+  inverse_hess = solve(hess_mat)
+  inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
+  print(inverse_hess)
   print(theta)
   print(maxit)
 }
