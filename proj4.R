@@ -49,7 +49,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     inverse_hess = solve(hess_mat)
     
     # delta = -(hess(theta))^(-1)*grad(theta)
-    delta = -inverse_hess%*%grad_vec
+    delta = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),-grad_vec))
     
     # newtheta = theta + delta
     newtheta=theta+delta
