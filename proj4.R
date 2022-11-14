@@ -1,4 +1,4 @@
-# separate function for finite difference
+
 # separate function for finite difference
 Hfd = function(theta, grad, eps, ...){
   grad0 <- grad(theta,...)
@@ -31,7 +31,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   count_maxit=0
   
   # while grad not absolute value less than tol times 
-  while(sum(abs(grad(theta,...))>tol*abs(func(theta,...)+fscale))!=0 & count_maxit <=maxit){ # the absolute value of the objective function plus fscale 
+  while(sum(abs(grad(theta,...))>tol*abs(func(theta,...)+fscale))!=0 & count_maxit < maxit){ # the absolute value of the objective function plus fscale 
     # maxit = maxit + 1
     count_maxit=count_maxit+1
     # if hess not provided, find hess
@@ -45,7 +45,16 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       # keep adding identity matrix until chol can be computed (use try)
       #d = -min(eigen(hess_mat)$values)+0.1
       #hess_mat = hess_mat + diag(d, nrow(hess_mat))
-      hess_mat=nearPD(hess_mat)$mat
+      # hess_mat=nearPD(hess_mat)$mat
+      d = 1e-6*norm(hess_mat)
+      hess_mat_perturbed = hess_mat + diag(d, nrow(hess_mat))
+      flag_perturbed = try (chol(hess_mat_perturbed), silent = T)
+      while (class(flag_perturbed)[1]=='try-error') {
+        d = d * 10
+        hess_mat_perturbed = hess_mat + diag(d, nrow(hess_mat))
+        flag_perturbed =try (chol(hess_mat_perturbed), silent = T)
+      }
+      hess_mat = hess_mat_perturbed
     }
     
     # inverse of hess use chol and backsolve
@@ -86,31 +95,34 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   }
   
   # if maxit > 100 stop()
-  if(count_maxit>maxit)
-    stop("fail")
+  if(count_maxit == maxit)
+    warning("failed to achieve convergence at maxit iterations")
+  
+  output = list(func(theta,...),theta, count_maxit, grad_vec)
+  names(output) = c("f", "theta", "iter", "g")
   
   # if hess(theta) not posdef warning("hess matrix not posdef")
-  if(class(try (chol(hess_mat)))[1]=='try-error')
+  if(class(try (chol(hess_mat)))[1]=='try-error'){
+    return(output)
     warning("hess matrix not posdef")
+  } else {
+    inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
+    output[[5]] = inverse_hess
+    names(output) = c("f", "theta", "iter", "g", "Hi")
+    return(output)
+  }
   
   
-  inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
-  output = list(func(theta,...),theta, count_maxit, grad_vec, inverse_hess)
-  names(output) = c("f", "theta", "iter", "g", "Hi")
+ 
+  #output = list(func(theta,...),theta, count_maxit, grad_vec, inverse_hess)
+  #names(output) = c("f", "theta", "iter", "g", "Hi")
   
   return(output)
 }
 
 
 
-nll2 <- function(theta,t,y) {
-  ## wrapper function for nll and its grad and Hessian,
-  ## suitable for optimization by nlm
-  z <- nll(theta,t,y) ## the objective 
-  attr(z,"gradient") <- gll(theta,t,y) 
-  attr(z,"hessian") <- hll(theta,t,y) 
-  z
-} ## nll2
+
 
 
 
