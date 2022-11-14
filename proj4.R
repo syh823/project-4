@@ -41,12 +41,11 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     flag=try (chol(hess_mat), silent = T)
     
     # if not 
-    while(class(flag)[1]=='try-error'){
+    if(class(flag)[1]=='try-error'){
       # keep adding identity matrix until chol can be computed (use try)
-      # d = -min(eigen(hess_mat)$values)+0.1
-      hess_mat = hess_mat + diag(nrow(hess_mat))
-      #hess_mat=nearPD(hess_mat)$mat
-      flag=try (chol(hess_mat), silent = T)
+      #d = -min(eigen(hess_mat)$values)+0.1
+      #hess_mat = hess_mat + diag(d, nrow(hess_mat))
+      hess_mat=nearPD(hess_mat)$mat
     }
     
     # inverse of hess use chol and backsolve
@@ -104,6 +103,14 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
 
 
 
+nll2 <- function(theta,t,y) {
+  ## wrapper function for nll and its grad and Hessian,
+  ## suitable for optimization by nlm
+  z <- nll(theta,t,y) ## the objective 
+  attr(z,"gradient") <- gll(theta,t,y) 
+  attr(z,"hessian") <- hll(theta,t,y) 
+  z
+} ## nll2
 
 
 
