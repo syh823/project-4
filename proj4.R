@@ -97,7 +97,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     while((new_f > original_f ||is.na(new_f))  && count_max.half<=max.half){
       delta = delta/2
       # max.half = max.half + 1
-      count_max.half=count_max.half+10
+      count_max.half=count_max.half+1
       # print(func(newtheta,...))
       
       # newtheta = theta + delta/2
