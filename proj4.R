@@ -1,7 +1,7 @@
 #   Newton's method of optimization to find the minimum of a given function 
 # starts with applying a second order Taylor Series approximation at an initial
 # guess of theta, the vector of parameters to be optimized. This approximation 
-# reguires the gradient vector and square Hessian matrix, the first and second  
+# requires the gradient vector and square Hessian matrix, the first and second  
 # order partial derivatives of the given function with respect to theta 
 # respectively. The next guess of theta is then the minimum of the quadratic 
 # approximation at the 
@@ -18,7 +18,10 @@
 # positive definite.
 
 
-# separate function for finite difference
+
+# Separate function: using finite difference approximations to derive Hessian 
+# matrix by differencing the gradient passed from newt function
+# Called when Hessian matrix is not supplied in newt function.
 Hfd = function(theta, grad, eps, ...){
   grad0 <- grad(theta,...)
   Hfd <- matrix(0,length(theta),length(theta)) ## approximated Hessian matrix
@@ -32,47 +35,46 @@ Hfd = function(theta, grad, eps, ...){
 }
 
 
+
+# This is the main function of Newton Optimizer
+# Given a function and its gradient with an initial guess of theta, we can find
+# the minimization of the objective function within limited trials.
 newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
                 maxit=100,max.half=200,eps=1e-6){
   
-  # original = func(theta)
+  # Objective function at initial value of theta
   original_f = func(theta, ...)
   
-  # grad (theta)
+  # Gradient at initial value of theta
   grad_vec = grad(theta, ...)
   
-  # if initial guess is the minimum
+  # If Hessian matrix is not provided, then we need to call our function to calculate it
   if(is.null(hess)==TRUE) hess_mat = Hfd(theta = theta, grad = grad, eps = eps, ...)
   else hess_mat = hess(theta,...)
   
-  # if is.nan(original) == T or is.nan(grad(theta)) == T: stop(the objective or derivatives are not finite at the initial theta)
+  # Check the objective or derivatives at initial theta are both not finite
   if(is.nan(original_f) == T | sum(is.nan(grad_vec))!=0)
     stop("the objective or derivatives are not finite at the initial theta")
   
-  
-  
-  # maxit = 0
+  # Count the number of iterations we've tried
   count_maxit=0
   
-  # while grad not absolute value less than tol times 
-  while(sum(abs(grad_vec)>tol*abs(original_f+fscale))!=0 & count_maxit < maxit){ # the absolute value of the objective function plus fscale 
-    # maxit = maxit + 1
-    count_maxit=count_maxit+1
-    # if hess not provided, find hess
+  # Check the condition on convergence
+  while(sum(abs(grad_vec)>tol*abs(original_f+fscale))!=0 & count_maxit < maxit){ 
+    count_maxit=count_maxit+1 ## One more iteration
+    # If Hessian matrix is not provided, calculate it
     if(is.null(hess)==TRUE) hess_mat = Hfd(theta = theta, grad = grad, eps = eps, ...)
     else hess_mat = hess(theta,...)
-    # check if hess if positive definite using chol
+    # Check if Hessian matrix is positive definite using Cholesky decomposition
     flag=try (chol(hess_mat), silent = T)
     
-    # if not 
+    # If Hessian matrix is not positive definite, we perturb it by add a multiple 
+    # of the identity matrix
     if(class(flag)[1]=='try-error'){
-      # keep adding identity matrix until chol can be computed (use try)
-      #d = -min(eigen(hess_mat)$values)+0.1
-      #hess_mat = hess_mat + diag(d, nrow(hess_mat))
-      # hess_mat=nearPD(hess_mat)$mat
       d = 1e-6*norm(hess_mat)
       hess_mat_perturbed = hess_mat + diag(d, nrow(hess_mat))
       flag_perturbed = try (chol(hess_mat_perturbed), silent = T)
+      # Keep perturb Hessian matrix until it can be Cholesky decomposed
       while (class(flag_perturbed)[1]=='try-error') {
         d = d * 10
         hess_mat_perturbed = hess_mat + diag(d, nrow(hess_mat))
@@ -81,72 +83,57 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       hess_mat = hess_mat_perturbed
     }
     
-    # inverse of hess use chol and backsolve
-    #inverse_hess = solve(hess_mat)
     
-    # delta = -(hess(theta))^(-1)*grad(theta)
-    #delta=-inverse_hess%*%grad(theta,...)
+    # Calculate the step towards minimizing the objective function
     delta = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),-grad_vec))
     
-    # newtheta = theta + delta
+    # Update theta and objective function
     newtheta=theta+delta
-    
-    # new = func(newtheta)
     new_f = func(newtheta,...)
     
-    # max.half = 0
+    # Count the number of a step being halved
     count_max.half=0
     
-    # while new > original and max.half <= 20
+    # Check if the step optimize the objective function within max.half times
     while((new_f > original_f ||is.na(new_f))  && count_max.half<=max.half){
-      delta = delta/2
-      # max.half = max.half + 1
-      count_max.half=count_max.half+1
-      # print(func(newtheta,...))
-      
-      # newtheta = theta + delta/2
-      newtheta= theta+ delta
-      # new = func(newtheta)
-      
+      delta = delta/2  # Halve the step is it can not reduce the function
+      count_max.half=count_max.half+1 
+      # Update theta and objective function
+      newtheta= theta+ delta  
       new_f = func(newtheta,...)
     }
-    # if max.half > 20 stop("step fails to reduce the objective despite trying max.half step halvings")
+    # The step fails to reduce the objective despite trying max.half step halvings
     if(count_max.half > max.half)
-      stop("step fails to reduce the objective despite trying max.half step halvings")
-    # grad(newtheta)
+      stop("step fails to reduce the objective despite trying", as.character(max.half), "step halvings")
+    
+    # Update theta, objective function and its gradient
     theta = newtheta
     original_f = new_f
     grad_vec = grad(theta,...)
   }
   
-  # if maxit > 100 stop()
+  # Fail to minimize the function within maxit times of iterations
   if(count_maxit == maxit)
-    warning("failed to achieve convergence at maxit iterations")
+    warning("failed to achieve convergence at ", as.character(maxit), " iterations")
   
+  # Output values at the minimum
   output = list(func(theta,...),theta, count_maxit, grad_vec)
   names(output) = c("f", "theta", "iter", "g")
   
-  # if hess(theta) not posdef warning("hess matrix not posdef")
+  # Check if Hessian matrix is positive definite at convergence
+  # If not, then give a warning
   if(class(try (chol(hess_mat)))[1]=='try-error'){
-    return(output)
-    warning("hess matrix not posdef")
+    return(output) 
+    warning("hess matrix not posdef")  
   } else {
+    # Hessian is positive definite, then the inverse Hessian could also be returned.
     inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
     output[[5]] = inverse_hess
     names(output) = c("f", "theta", "iter", "g", "Hi")
     return(output)
   }
   
-  
- 
-  #output = list(func(theta,...),theta, count_maxit, grad_vec, inverse_hess)
-  #names(output) = c("f", "theta", "iter", "g", "Hi")
-  
-  return(output)
 }
-
-
-
 
 
 
