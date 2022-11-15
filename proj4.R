@@ -1,12 +1,32 @@
+#   Newton's method of optimization to find the minimum of a given function 
+# starts with applying a second order Taylor Series approximation at an initial
+# guess of theta, the vector of parameters to be optimized. This approximation 
+# reguires the gradient vector and square Hessian matrix, the first and second  
+# order partial derivatives of the given function with respect to theta 
+# respectively. The next guess of theta is then the minimum of the quadratic 
+# approximation at the 
+# previous guess, checking that the Hessian matrix at that guess is positive 
+# definite. If it isn't, it is perturbed by adding a multiple of the identity 
+# matrix, large enough to force positive definiteness. To check that the new  
+# guess is getting closer to the minimum of the function, the function value at 
+# the new guess must be smaller than the value at the previous guess. If this 
+# condition is not met, the difference between the new guess and the previous 
+# one is halved until it is met. 
+
+# This algorithm is repeated until convergence is reached, which is when the 
+# gradient at theta is approximately 0 and its Hessian matrix is 
+# positive definite.
+
 
 # separate function for finite difference
 Hfd = function(theta, grad, eps, ...){
   grad0 <- grad(theta,...)
-  Hfd <- matrix(0,length(theta),length(theta)) ## finite diference Hessian 
-  for (i in 1:length(theta)) { ## loop over parameters
-    th1 <- theta; th1[i] <- th1[i] + eps ## increase theta by eps 
+  Hfd <- matrix(0,length(theta),length(theta)) ## approximated Hessian matrix
+  for (i in 1:length(theta)) { 
+    ## finite difference approximation for each parameter (by row)
+    th1 <- theta; th1[i] <- th1[i] + eps ## increase theta by small increment eps 
     grad1 <- grad(th1,...) ## compute resulting grad at th1
-    Hfd[i,] <- (grad1 - grad0)/eps ## approximate second derivs by row
+    Hfd[i,] <- (grad1 - grad0)/eps ## approximate second derivatives by row
   }
   return(Hfd)
 }
@@ -16,13 +36,13 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
                 maxit=100,max.half=200,eps=1e-6){
   
   # original = func(theta)
-  original = func(theta, ...)
+  original_f = func(theta, ...)
   
   # grad (theta)
   grad_vec = grad(theta, ...)
   
   # if is.nan(original) == T or is.nan(grad(theta)) == T: stop(the objective or derivatives are not finite at the initial theta)
-  if(is.nan(original) == T | sum(is.nan(grad_vec))!=0)
+  if(is.nan(original_f) == T | sum(is.nan(grad_vec))!=0)
     stop("the objective or derivatives are not finite at the initial theta")
   
   
@@ -31,7 +51,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   count_maxit=0
   
   # while grad not absolute value less than tol times 
-  while(sum(abs(grad(theta,...))>tol*abs(func(theta,...)+fscale))!=0 & count_maxit < maxit){ # the absolute value of the objective function plus fscale 
+  while(sum(abs(grad_vec)>tol*abs(original_f+fscale))!=0 & count_maxit < maxit){ # the absolute value of the objective function plus fscale 
     # maxit = maxit + 1
     count_maxit=count_maxit+1
     # if hess not provided, find hess
@@ -68,13 +88,13 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     newtheta=theta+delta
     
     # new = func(newtheta)
-    new = func(newtheta,...)
+    new_f = func(newtheta,...)
     
     # max.half = 0
     count_max.half=0
     
     # while new > original and max.half <= 20
-    while((new>original||is.na(new))  && count_max.half<=max.half){
+    while((new_f > original_f ||is.na(new_f))  && count_max.half<=max.half){
       delta = delta/2
       # max.half = max.half + 1
       count_max.half=count_max.half+10
@@ -84,13 +104,14 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       newtheta= theta+ delta
       # new = func(newtheta)
       
-      new = func(newtheta,...)
+      new_f = func(newtheta,...)
     }
     # if max.half > 20 stop("step fails to reduce the objective despite trying max.half step halvings")
     if(count_max.half > max.half)
       stop("step fails to reduce the objective despite trying max.half step halvings")
     # grad(newtheta)
     theta = newtheta
+    original_f = new_f
     grad_vec = grad(theta,...)
   }
   
