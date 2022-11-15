@@ -41,6 +41,10 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
   # grad (theta)
   grad_vec = grad(theta, ...)
   
+  # if initial guess is the minimum
+  if(is.null(hess)==TRUE) hess_mat = Hfd(theta = theta, grad = grad, eps = eps, ...)
+  else hess_mat = hess(theta,...)
+  
   # if is.nan(original) == T or is.nan(grad(theta)) == T: stop(the objective or derivatives are not finite at the initial theta)
   if(is.nan(original_f) == T | sum(is.nan(grad_vec))!=0)
     stop("the objective or derivatives are not finite at the initial theta")
