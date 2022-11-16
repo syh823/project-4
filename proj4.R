@@ -23,6 +23,9 @@
 # matrix by differencing the gradient passed from newt function
 # Called when Hessian matrix is not supplied in newt function.
 Hfd = function(theta, grad, eps, ...){
+  # theta: parameters of the function
+  # grad: gradient of the function
+  # eps: a properly small number to differentiate gradient 
   grad0 <- grad(theta,...)
   Hfd <- matrix(0,length(theta),length(theta)) ## approximated Hessian matrix
   for (i in 1:length(theta)) { 
@@ -41,12 +44,18 @@ Hfd = function(theta, grad, eps, ...){
 # the minimization of the objective function within limited trials.
 newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
                 maxit=100,max.half=200,eps=1e-6){
+  # The explaination of every each input:
+    # theta: an initial guess of optimization parameters
+    # func: the objective function to minimize
+    # grad: the gradient of objective function
+    # hess: the Hessian matrix of objective function. It may be provided or not.
+    # tol,fscale: both them are used to test convergence
+    # maxit: maximum number of iterations
+    # max.half: maximum number of times of halving a step before giving up that step 
+    # eps: a properly small number to be used in finite difference formulas
   
-  # Objective function at initial value of theta
-  original_f = func(theta, ...)
-  
-  # Gradient at initial value of theta
-  grad_vec = grad(theta, ...)
+  original_f = func(theta, ...)  # Objective function at initial value of theta
+  grad_vec = grad(theta, ...)  # Gradient at initial value of theta
   
   # If Hessian matrix is not provided, then we need to call our function to calculate it
   if(is.null(hess)==TRUE) hess_mat = Hfd(theta = theta, grad = grad, eps = eps, ...)
