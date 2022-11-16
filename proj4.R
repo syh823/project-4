@@ -95,7 +95,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     count_max.half=0
     
     # Check if the step optimize the objective function within max.half times
-    while((new_f > original_f ||is.na(new_f))  && count_max.half<=max.half){
+    while((new_f > original_f ||is.finite(new_f) == FALSE)  && count_max.half<=max.half){
       delta = delta/2  # Halve the step is it can not reduce the function
       count_max.half=count_max.half+1 
       # Update theta and objective function
