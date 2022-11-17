@@ -37,7 +37,7 @@ Hfd = function(theta, grad, eps, ...){
   # grad: gradient of the function
   # eps: a properly small number to differentiate gradient 
   grad0 <- grad(theta,...)
-  if (length(theta)==1){
+  if (length(theta)==1){ # for 1-dimensional theta
     Hfd = matrix((grad(theta + eps,...) - grad0)/eps, 1, 1)
   } else{
     Hfd <- matrix(0,length(theta),length(theta)) ## approximated Hessian matrix
@@ -117,7 +117,8 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     count_max.half=0
     
     # Check if the step optimize the objective function within max.half times
-    while((new_f > original_f ||is.finite(new_f) == FALSE)  && count_max.half<=max.half){
+    while((new_f > original_f ||is.finite(new_f) == FALSE)  && 
+          count_max.half<=max.half){
       delta = delta/2  # Halve the step is it can not reduce the function
       count_max.half=count_max.half+1 
       # Update theta and objective function
@@ -126,7 +127,8 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     }
     # The step fails to reduce the objective despite trying max.half step halvings
     if(count_max.half > max.half)
-      stop("step fails to reduce the objective despite trying", as.character(max.half), "step halvings")
+      stop("step fails to reduce the objective despite trying", 
+           as.character(max.half), "step halvings")
     
     # Update theta, objective function and its gradient
     theta = newtheta
