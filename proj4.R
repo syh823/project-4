@@ -1,3 +1,13 @@
+# 1. Nurfahimah binti Mohd Ghazali, s2464388@ed.ac.uk
+# 2. Yanming Gu, s2304572@ed.ac.uk
+# 3. Yuheng Song, s2447118@ed.ac.uk
+
+# Github address: https://github.com/syh823/project-4
+
+# All three of us worked together on the project. Contributions are equal for
+# all group members.
+
+
 #   Newton's method of optimization to find the minimum of a given function 
 # starts with applying a second order Taylor Series approximation at an initial
 # guess of theta, the vector of parameters to be optimized. This approximation 
@@ -27,12 +37,16 @@ Hfd = function(theta, grad, eps, ...){
   # grad: gradient of the function
   # eps: a properly small number to differentiate gradient 
   grad0 <- grad(theta,...)
-  Hfd <- matrix(0,length(theta),length(theta)) ## approximated Hessian matrix
-  for (i in 1:length(theta)) { 
-    ## finite difference approximation for each parameter (by row)
-    th1 <- theta; th1[i] <- th1[i] + eps ## increase theta by small increment eps 
-    grad1 <- grad(th1,...) ## compute resulting grad at th1
-    Hfd[i,] <- (grad1 - grad0)/eps ## approximate second derivatives by row
+  if (length(theta)==1){
+    Hfd = matrix((grad(theta + eps,...) - grad0)/eps, 1, 1)
+  } else{
+    Hfd <- matrix(0,length(theta),length(theta)) ## approximated Hessian matrix
+    for (i in 1:length(theta)) { 
+      ## finite difference approximation for each parameter (by row)
+      th1 <- theta; th1[i] <- th1[i] + eps ## increase theta by small increment eps 
+      grad1 <- grad(th1,...) ## compute resulting grad at th1
+      Hfd[i,] <- (grad1 - grad0)/eps ## approximate second derivatives by row
+    }
   }
   return(Hfd)
 }
@@ -92,7 +106,6 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
       hess_mat = hess_mat_perturbed
     }
     
-    
     # Calculate the step towards minimizing the objective function
     delta = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),-grad_vec))
     
@@ -136,7 +149,7 @@ newt = function(theta,func,grad,hess=NULL,...,tol=1e-8,fscale=1,
     warning("hess matrix not posdef")  
   } else {
     # Hessian is positive definite, then the inverse Hessian could also be returned.
-    inverse_hess = backsolve(chol(hess_mat),forwardsolve(t(chol(hess_mat)),diag(length(theta))))
+    inverse_hess = chol2inv(chol(hess_mat))
     output[[5]] = inverse_hess
     names(output) = c("f", "theta", "iter", "g", "Hi")
     return(output)
