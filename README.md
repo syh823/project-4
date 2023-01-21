@@ -8,24 +8,28 @@ This algorithm is repeated until convergence is reached, which is when the gradi
 
 ## Project Content
 
-This project consists of two functions, `Hfd` and `newt`. `Hfd` is a separate function applies finite difference approximations to derive Hessian matrix to be used in `newt`. `newt` is designed such that the output is comparable to the built-in `nlm` function. The documentation of arguments for each function is as follows:
+This project consists of three functions, `Hfd`, `Hperturb` and `newt`. `Hfd` is a separate function applies finite difference approximations to derive Hessian matrix to be used in `newt`. `Hperturb` is a separate function for perturbing the Hessian matrix when it is not positive definite, used in `newt` as explained in the overview. `newt` is the main function in this project, designed such that the output is comparable to the built-in `nlm` function. The documentation of arguments for each function is as follows:
 
-- `Hfd(theta, grad, eps, ...)`
-  - theta: parameters of the objective function
-  - grad: gradient function of the objective function
-  - eps: a properly small number to differentiate gradient (for approximation)
-  - ...: passed arguments from objective function
+- `Hfd(theta, grad, eps, ...)` approximates Hessian matrix by finite differencing the gradient vector at the current guess of theta.
+  - `theta`: parameters of the objective function
+  - `grad`: gradient function of the objective function
+  - `eps`: a properly small number to differentiate gradient (for approximation)
+  - `...`: passed arguments from objective function
 
-- `newt(theta, func, grad, hess = NULL, ..., tol = 1e-8, fscale = 1, maxit = 100, max.half = 200, eps = 1e-6)`
-  - theta: an initial guess of optimization parameters
-  - func: the objective function to minimize
-  - grad: the gradient function of objective function
-  - hess: the Hessian matrix of objective function. It may be provided or not.
-  - ...: passed arguments from objective function
-  - tol,fscale: values used to test convergence
-  - maxit: maximum number of iterations
-  - max.half: maximum number of times of halving a step before giving up at that step 
-  - eps: a properly small number to be used in finite difference formulas
+- `Hperturb(hess_mat)` returns the perturbed Hessian matrix after forcing positive definiteness.
+  - `hess_mat`: hessian matrix to be perturbed
 
-The final marked 15/18 (83%) project can be found [here](https://github.com/syh823/project-4/blob/main/proj4.R)
+- `newt(theta, func, grad, hess = NULL, ..., tol = 1e-8, fscale = 1, maxit = 100, max.half = 200, eps = 1e-6)` finds; `f` the minimum of the objective function, `theta` its parameters to achieve said minimum, `iter` the number of iterations it takes to reach the minimum, `g` the gradient vector at the minimum and `Hi`, the inverse Hessian matrix at the minimum. The arguments of `newt` are as follows: 
+  - `theta`: an initial guess of optimization parameters
+  - `func`: the objective function to minimize
+  - `grad`: the gradient function of objective function
+  - `hess`: the Hessian matrix of objective function. It may be provided or not.
+  - `...`: passed arguments from objective function
+  - `tol`,`fscale`: values used to test convergence
+  - `maxit`: maximum number of iterations
+  - `max.half`: maximum number of times of halving a step before giving up at that step 
+  - `eps`: a properly small number to be used in finite difference formulas
+
+The final marked 15/18 (83%) project can be found [here](https://github.com/syh823/project-4/blob/main/proj4.R).
+
 The revised version after comments can be found [here]()
