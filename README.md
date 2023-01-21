@@ -32,4 +32,4 @@ This project consists of three functions, `Hfd`, `Hperturb` and `newt`. `Hfd` is
 
 The final marked 15/18 (83%) project can be found [here](https://github.com/syh823/project-4/blob/main/proj4.R).
 
-The revised version after comments can be found [here]()
+The revised version after comments can be found [here](https://github.com/syh823/project-4/blob/main/proj4(revised).R)
